@@ -4,7 +4,7 @@
 <br/>
 <hr>
 
-[NVIDIA Reflex Low Latency](https://www.nvidia.com/en-us/geforce/news/reflex-low-latency-platform/) reduces system input lag. It works behind the scenes by aligning the game's engine updates (when it registers your button presses) closer to the moment your GPU actually draws the frame on screen.
+[NVIDIA Reflex Low Latency](https://www.nvidia.com/en-us/geforce/news/reflex-low-latency-platform/) reduces system input lag by dynamically aligning the game's engine updates closer to the moment your GPU actually draws the frame on screen.
 
 **Requirements:**
 
