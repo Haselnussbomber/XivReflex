@@ -1,18 +1,20 @@
 <img align="left" src="XivReflex/Assets/Icon.png" width="60px" height="60px" alt="XivReflex"/>
 
-**XivReflex** is a lightweight plugin that adds NVIDIA Reflex Low Latency to the game.<br/>
+**XivReflex** is a Dalamud plugin to integrate NVIDIA Reflex Low Latency into Final Fantasy XIV.<br/>
 <br/>
 <hr>
 
-FFXIV dispatches its framework and render threads simultaneously, which causes inputs to be polled at the start of a frame and become stale by the time the GPU actually finishes drawing, especially under heavy GPU load.
-
-This plugin hooks into the main game loop to delay the framework tick until right before the GPU is ready for the next frame. By sampling your keyboard and mouse at the last possible microsecond, it eliminates DirectX render queue backlog and significantly reduces click-to-pixel latency during GPU-bound scenarios.
+[NVIDIA Reflex Low Latency](https://www.nvidia.com/en-us/geforce/news/reflex-low-latency-platform/) reduces system input lag. It works behind the scenes by aligning the game's engine updates (when it registers your button presses) closer to the moment your GPU actually draws the frame on screen.
 
 **Requirements:**
 
-- NVIDIA GeForce 900 Series or higher
-- Driver version 456.38 or higher
+- NVIDIA GeForce 900 Series or newer
+- NVIDIA Driver version 456.38 or newer
+
+*Note: This plugin does not support NVIDIA Reflex 2 Frame Warp.*
 
 ---
 
-Note: This plugin supports NVIDIA Reflex Low Latency; it does not support NVIDIA Reflex 2 Frame Warp.
+NVIDIA and NVIDIA Reflex are trademarks or registered trademarks of NVIDIA Corporation.<br/>
+FINAL FANTASY is a registered trademark of Square Enix Holdings Co., Ltd.<br/>
+This plugin is not affiliated with or endorsed by NVIDIA or Square Enix.

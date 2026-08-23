@@ -6,8 +6,8 @@
     <Version>1.0.0</Version>
     <Author>Haselnussbomber</Author>
     <RepoUrl>https://github.com/Haselnussbomber/XivReflex</RepoUrl>
-    <Punchline>TODO</Punchline>
-    <Description>TODO</Description>
+    <Punchline>Integrates NVIDIA Reflex Low Latency to reduce System Latency.</Punchline>
+    <Description>NVIDIA Reflex Low Latency reduces system input lag. It works behind the scenes by aligning the game's engine updates (when it registers your button presses) closer to the moment your GPU actually draws the frame on screen.</Description>
   </PropertyGroup>
 
   <!-- Build settings -->
