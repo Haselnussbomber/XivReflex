@@ -24,13 +24,12 @@ public class ReflexManager : IAsyncDisposable
 
     public NvAPI_Status InitStatus { get; }
 
-    public ReflexManager()
+    public unsafe ReflexManager()
     {
-        unsafe
-        {
-            void* nvapiLibrary = null;
-            InitStatus = NvApiNative.GetOrInitNvAPI(&nvapiLibrary);
-        }
+        NvApiNative.Initialize();
+
+        void* nvapiLibrary = null;
+        InitStatus = NvApiNative.GetOrInitNvAPI(&nvapiLibrary);
 
         if (InitStatus != NvAPI_Status.NVAPI_OK)
         {
@@ -39,27 +38,20 @@ public class ReflexManager : IAsyncDisposable
         }
 
         uint gpuCount = 0;
-        unsafe
-        {
-            var nvGPUHandles = stackalloc void*[NvApiNative.MAX_PHYSICAL_GPUS];
-            NvApiNative.EnumPhysicalGPUs(nvGPUHandles, &gpuCount);
-        }
+        var nvGPUHandles = stackalloc void*[NvApiNative.MAX_PHYSICAL_GPUS];
+        NvApiNative.EnumPhysicalGPUs(nvGPUHandles, &gpuCount);
         if (gpuCount == 0)
         {
             Services.PluginLog.Error("Did not find any NVIDIA GPU");
             return;
         }
 
-        Services.PluginLog.Information("Found {gpuCount} NVIDIA GPUs, using NVAPI", gpuCount);
-        // TODO: check for reflex support?
+        Services.PluginLog.Information("NVIDIA GPU found, using NVAPI");
 
-        unsafe
-        {
-            _runAllTasksHook = Services.GameInteropProvider.HookFromSignature<RunAllTasksDelegate>("E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ?? 48 85 C9 74 ?? F3 0F 10 8B", RunAllTasksDetour);
-            _processCommandsHook = Services.GameInteropProvider.HookFromAddress<ImmediateContext.Delegates.ProcessCommands>(ImmediateContext.Addresses.ProcessCommands.Value, ProcessCommandsDetour);
-            _mouseMessageHandlerHook = Services.GameInteropProvider.HookFromSignature<MouseMessageHandlerDelegate>("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 C6 05", MouseMessageHandlerDetour);
-            _presentHook = Services.GameInteropProvider.HookFromSignature<PresentDelegate>("E8 ?? ?? ?? ?? C6 46 ?? 00 48 8B 8E", PresentDetour);
-        }
+        _runAllTasksHook = Services.GameInteropProvider.HookFromSignature<RunAllTasksDelegate>("E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ?? 48 85 C9 74 ?? F3 0F 10 8B", RunAllTasksDetour);
+        _processCommandsHook = Services.GameInteropProvider.HookFromAddress<ImmediateContext.Delegates.ProcessCommands>(ImmediateContext.Addresses.ProcessCommands.Value, ProcessCommandsDetour);
+        _mouseMessageHandlerHook = Services.GameInteropProvider.HookFromSignature<MouseMessageHandlerDelegate>("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 C6 05", MouseMessageHandlerDetour);
+        _presentHook = Services.GameInteropProvider.HookFromSignature<PresentDelegate>("E8 ?? ?? ?? ?? C6 46 ?? 00 48 8B 8E", PresentDetour);
 
         Services.Framework.Run(() =>
         {
@@ -68,9 +60,9 @@ public class ReflexManager : IAsyncDisposable
             _presentHook.Enable();
             _mouseMessageHandlerHook.Enable();
 
-            PCLStats.Init();
-
             Services.PluginLog.Information("Hooks enabled");
+
+            PCLStats.Init();
 
             var config = Services.Config;
             SetSleepMode(

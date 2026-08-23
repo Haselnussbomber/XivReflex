@@ -26,7 +26,6 @@ public static class Services
         CommandManager = pluginInterface.GetService<ICommandManager>();
 
         Config = PluginConfig.Load();
-        NvApiNative.Initialize();
         ReflexManager = new ReflexManager();
     }
 
