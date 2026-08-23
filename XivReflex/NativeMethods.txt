@@ -1,0 +1,5 @@
+RegisterWindowMessage
+GetForegroundWindow
+GetWindowThreadProcessId
+PostThreadMessage
+PostMessage

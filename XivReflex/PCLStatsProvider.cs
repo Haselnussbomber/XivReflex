@@ -1,8 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Tracing;
-using System.Runtime.InteropServices;
 using System.Threading;
+using Windows.Win32;
 
 namespace XivReflex;
 
@@ -27,7 +27,7 @@ public static class PCLStats
     {
         Flags = flags;
 
-        WindowMessage = NativeMethods.RegisterWindowMessage("PC_Latency_Stats_Ping");
+        WindowMessage = PInvoke.RegisterWindowMessage("PC_Latency_Stats_Ping");
         QuitEvent = new ManualResetEvent(false);
 
         PCLStatsProvider.Log.PCLStatsInit();
@@ -98,27 +98,27 @@ public static class PCLStats
             if (IdThread != 0)
             {
                 PCLStatsProvider.Log.PCLStatsInputThread(IdThread);
-                NativeMethods.PostThreadMessage(IdThread, WindowMessage, 0, 0);
+                PInvoke.PostThreadMessage(IdThread, WindowMessage, 0, 0);
                 continue;
             }
 
-            var hWnd = NativeMethods.GetForegroundWindow();
+            var hWnd = PInvoke.GetForegroundWindow();
             if (hWnd != 0)
             {
-                NativeMethods.GetWindowThreadProcessId(hWnd, out var processId);
+                PInvoke.GetWindowThreadProcessId(hWnd, out var processId);
 
                 if (Environment.ProcessId == processId)
                 {
                     if (VirtualKey == VK_F13 || VirtualKey == VK_F14 || VirtualKey == VK_F15)
                     {
                         PCLStatsProvider.Log.PCLStatsInputKey(VirtualKey);
-                        NativeMethods.PostMessage(hWnd, WM_KEYDOWN, VirtualKey, 0x00000001);
-                        NativeMethods.PostMessage(hWnd, WM_KEYUP, VirtualKey, unchecked((nint)0xC0000001));
+                        PInvoke.PostMessage(hWnd, WM_KEYDOWN, VirtualKey, 0x00000001);
+                        PInvoke.PostMessage(hWnd, WM_KEYUP, VirtualKey, unchecked((nint)0xC0000001));
                     }
                     else if (WindowMessage != 0)
                     {
                         PCLStatsProvider.Log.PCLStatsInputMsg(WindowMessage);
-                        NativeMethods.PostMessage(hWnd, WindowMessage, 0, 0);
+                        PInvoke.PostMessage(hWnd, WindowMessage, 0, 0);
                     }
                     else
                     {
@@ -197,26 +197,6 @@ public sealed class PCLStatsProvider : EventSource
             PCLStatsFlags((uint)PCLStats.Flags);
         }
     }
-}
-
-internal static class NativeMethods
-{
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern uint RegisterWindowMessage(string lpString);
-
-    [DllImport("user32.dll")]
-    public static extern nint GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    public static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool PostThreadMessage(uint idThread, uint msg, nint wParam, nint lParam);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool PostMessage(nint hWnd, uint msg, nint wParam, nint lParam);
 }
 
 public enum PclStatsLatencyMarkerType : uint

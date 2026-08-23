@@ -27,6 +27,7 @@ Requirements:
 
   <!-- NuGet dependencies -->
   <ItemGroup>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.321" PrivateAssets="All" />
+    <PackageReference Include="Roslynator.Analyzers" Version="5.0.0" PrivateAssets="all" />
   </ItemGroup>
 </Project>
