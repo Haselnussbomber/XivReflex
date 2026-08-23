@@ -8,6 +8,10 @@ public static class Localization
 {
     private static readonly FrozenDictionary<string, Dictionary<string, string>> Localizations = new Dictionary<string, Dictionary<string, string>>()
     {
+        ["CommandHandlerHelpMessage"] = new() {
+            { "en", "Opens the XivReflex configuration window" },
+            { "de", "Öffnet das XivReflex-Konfigurationsfenster" },
+        },
         ["ConfigWindow.WindowName"] = new() {
             { "en", "XivReflex Configuration" },
             { "de", "XivReflex Konfiguration" }
@@ -24,9 +28,9 @@ public static class Localization
             { "en", "Visit Release Notes" },
             { "de", "Zu den Release Notes" }
         },
-        ["CommandHandlerHelpMessage"] = new() {
-            { "en", "Opens the XivReflex configuration window" },
-            { "de", "Öffnet das XivReflex-Konfigurationsfenster" },
+        ["ConfigWindow.ReflexNotAvailable"] = new() {
+            { "en", "NVIDIA Reflex is not available." },
+            { "de", "NVIDIA Reflex ist nicht verfügbar." }
         },
         ["Config.NVIDIAReflexLowLatency.Label"] = new() {
             { "en", "NVIDIA Reflex Low Latency" }

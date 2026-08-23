@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
@@ -58,7 +59,8 @@ public class ConfigWindow : Window, IDisposable
 
         if (!isInitialized)
         {
-            // yadda yadda
+            ImGui.TextColoredWrapped(ImGuiColors.ErrorForeground, t("ConfigWindow.ReflexNotAvailable"));
+            ImGui.Spacing();
         }
 
         using (ImRaii.Disabled(!isInitialized))
