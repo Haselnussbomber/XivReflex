@@ -20,6 +20,10 @@ public static class Localization
             { "en", "Support me on GitHub Sponsors" },
             { "de", "Unterstütze mich auf GitHub Sponsors" }
         },
+        ["CommandHandlerHelpMessage"] = new() {
+            { "en", "Opens the XivReflex configuration window" },
+            { "de", "Öffnet das XivReflex-Konfigurationsfenster" },
+        },
     }.ToFrozenDictionary();
 
     public static string t(string key)

@@ -11,6 +11,8 @@ public static class Services
     public static IFramework Framework { get; private set; } = null!;
     public static ISigScanner SigScanner { get; private set; } = null!;
     public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
+    public static ICommandManager CommandManager { get; private set; } = null!;
+
     public static PluginConfig Config { get; private set; } = null!;
     public static ReflexManager ReflexManager { get; private set; } = null!;
 
@@ -21,6 +23,8 @@ public static class Services
         Framework = pluginInterface.GetService<IFramework>();
         SigScanner = pluginInterface.GetService<ISigScanner>();
         GameInteropProvider = pluginInterface.GetService<IGameInteropProvider>();
+        CommandManager = pluginInterface.GetService<ICommandManager>();
+
         Config = PluginConfig.Load();
         NvApiNative.Initialize();
         ReflexManager = new ReflexManager();
