@@ -162,26 +162,6 @@ public struct NV_SET_SLEEP_MODE_PARAMS_V1
     [FieldOffset(0x0D), FixedSizeArray] internal FixedSizeArray31<byte> _rsvd;
 }
 
-/*
-[EventSource(Name = "PCLStatsTraceLoggingProvider", Guid = "0d216f06-82a6-4d49-bc4f-8f38ae56efab")]
-public sealed class ReflexEtwProvider : EventSource
-{
-    public static readonly ReflexEtwProvider Log = new();
-
-    [Event(1)]
-    public void PCLStatsInit() => WriteEvent(1);
-
-    [Event(2)]
-    public void PCLStatsEvent(uint Marker, ulong FrameId) => WriteEvent(2, Marker, FrameId);
-
-    [Event(3)]
-    public void PCLStatsInput(uint IdThread) => WriteEvent(3, IdThread);
-
-    [Event(4)]
-    public void PCLStatsShutdown() => WriteEvent(4);
-}
-*/
-
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [InlineArray(31)]
 internal struct FixedSizeArray31<T> where T : unmanaged

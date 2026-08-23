@@ -23,7 +23,7 @@ public class ReflexManager : IAsyncDisposable
     private unsafe delegate void PrePostTickDelegate(Device* thisPtr);
     private unsafe delegate void RunAllTasksDelegate(TaskManager* thisPtr, void* userData);
     private unsafe delegate void PresentDelegate(SwapChain* thisPtr);
-    private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, int uMsg, int wParam);
+    private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, uint uMsg, uint wParam);
     private unsafe delegate void InputUpdateDelegate(InputDeviceManager* thisPtr, float frameDeltaTime, GamepadInputData* outGamepadInputs, CursorInputData* outCursorInputs, KeyboardInputData* outKeyboardInputs);
 
     public NvAPI_Status InitStatus { get; private set; }
@@ -75,7 +75,7 @@ public class ReflexManager : IAsyncDisposable
             _mouseMessageHandlerHook.Enable();
             _inputUpdateHook.Enable();
 
-            // ReflexEtwProvider.Log.PCLStatsInit();
+            PCLStats.Init();
 
             Services.PluginLog.Information("Hooks enabled");
 
@@ -105,8 +105,7 @@ public class ReflexManager : IAsyncDisposable
             _mouseMessageHandlerHook = null;
             _inputUpdateHook?.Dispose();
             _inputUpdateHook = null;
-            // ReflexEtwProvider.Log.PCLStatsShutdown();
-            // ReflexEtwProvider.Log.Dispose();
+            PCLStats.Shutdown();
         }));
     }
 
@@ -114,10 +113,9 @@ public class ReflexManager : IAsyncDisposable
     {
         if (_reflexEnabled)
         {
-            var sw = Stopwatch.StartNew();
+            var start = Stopwatch.GetTimestamp();
             NvApiNative.D3D_Sleep(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer());
-            sw.Stop();
-            SleepDuration = sw.Elapsed;
+            SleepDuration = Stopwatch.GetElapsedTime(start);
         }
 
         SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_START);
@@ -129,17 +127,17 @@ public class ReflexManager : IAsyncDisposable
     {
         SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_START);
         _processCommandsHook!.OriginalDisposeSafe(thisPtr, renderCommands, renderCommandCount);
+        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_END);
     }
 
     private unsafe void PresentDetour(SwapChain* thisPtr)
     {
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_END);
         SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PRESENT_START);
         _presentHook!.OriginalDisposeSafe(thisPtr);
         SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PRESENT_END);
     }
 
-    private unsafe void MouseMessageHandlerDetour(void* hwnd, int uMsg, int wParam)
+    private unsafe void MouseMessageHandlerDetour(void* hwnd, uint uMsg, uint wParam)
     {
         _mouseMessageHandlerHook!.OriginalDisposeSafe(hwnd, uMsg, wParam);
 
@@ -148,18 +146,15 @@ public class ReflexManager : IAsyncDisposable
             SetLatencyMarker(NV_LATENCY_MARKER_TYPE.TRIGGER_FLASH);
         }
 
-        /*
-        if (uMsg == PclStatsWindowMessage)
+        if (PCLStats.IsPingMsgId(uMsg))
         {
             SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PC_LATENCY_PING);
         }
-        */
     }
 
     private unsafe void InputUpdateDetour(InputDeviceManager* thisPtr, float frameDeltaTime, GamepadInputData* outGamepadInputs, CursorInputData* outCursorInputs, KeyboardInputData* outKeyboardInputs)
     {
         SetLatencyMarker(NV_LATENCY_MARKER_TYPE.INPUT_SAMPLE);
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PC_LATENCY_PING); // here?
         _inputUpdateHook!.OriginalDisposeSafe(thisPtr, frameDeltaTime, outGamepadInputs, outCursorInputs, outKeyboardInputs);
     }
 
@@ -175,7 +170,7 @@ public class ReflexManager : IAsyncDisposable
             MinimumIntervalUs = minimumIntervalUs,
             UseMarkersToOptimize = false, // TODO: "Only works with bLowLatencyBoost enabled. Enable bUseMarkersToOptimize if using latency markers and true is found beneficial to latency"
         };
-        sleepModeParams.Rsvd.Fill(0);
+        sleepModeParams.Rsvd.Clear();
 
         NvAPI_Status status;
 
@@ -203,8 +198,13 @@ public class ReflexManager : IAsyncDisposable
 
     private unsafe bool SetLatencyMarker(NV_LATENCY_MARKER_TYPE marker)
     {
+        PCLStats.Marker((PclStatsLatencyMarkerType)marker, _framesDrawn);
+
         if (InitStatus != NvAPI_Status.NVAPI_OK)
             return false;
+
+        if (marker == NV_LATENCY_MARKER_TYPE.PRESENT_END)
+            _framesDrawn++;
 
         var markerParams = new NV_LATENCY_MARKER_PARAMS_V1
         {
@@ -212,15 +212,9 @@ public class ReflexManager : IAsyncDisposable
             MarkerType = marker,
             FrameID = _framesDrawn
         };
-        markerParams.Rsvd.Fill(0);
+        markerParams.Rsvd.Clear();
 
         var ret = NvApiNative.D3D_SetLatencyMarker(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &markerParams);
-
-        // TODO: ReflexEtwProvider.Log.PCLStatsEvent((uint)marker, _framesDrawn);
-
-        if (marker == NV_LATENCY_MARKER_TYPE.PRESENT_END)
-            _framesDrawn++;
-
         return ret == NvAPI_Status.NVAPI_OK;
     }
 
