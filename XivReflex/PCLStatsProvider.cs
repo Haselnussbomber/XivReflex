@@ -25,26 +25,15 @@ public static class PCLStats
     // PCLSTATS_INIT
     public static void Init(PclStatsFlags flags = PclStatsFlags.None)
     {
-        if (WindowMessage == 0)
-        {
-            WindowMessage = NativeMethods.RegisterWindowMessage("PC_Latency_Stats_Ping");
-        }
-
         Flags = flags;
 
-        if (QuitEvent == null)
-        {
-            QuitEvent = new ManualResetEvent(false);
-        }
+        WindowMessage = NativeMethods.RegisterWindowMessage("PC_Latency_Stats_Ping");
+        QuitEvent = new ManualResetEvent(false);
 
-        // In C#, EventSource is automatically registered by default, we just log the init event.
         PCLStatsProvider.Log.PCLStatsInit();
 
-        if (PingThread == null)
-        {
-            PingThread = new Thread(PingThreadProc) { IsBackground = true };
-            PingThread.Start();
-        }
+        PingThread = new Thread(PingThreadProc) { IsBackground = true };
+        PingThread.Start();
     }
 
     // PCLSTATS_MARKER
@@ -65,7 +54,7 @@ public static class PCLStats
         if (PingThread != null)
         {
             QuitEvent?.Set();
-            PingThread.Join(1000); // Wait up to 1 second
+            PingThread.Join(1000);
             PingThread = null;
         }
 
@@ -216,18 +205,18 @@ internal static class NativeMethods
     public static extern uint RegisterWindowMessage(string lpString);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
+    public static extern nint GetForegroundWindow();
 
     [DllImport("user32.dll")]
-    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    public static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool PostThreadMessage(uint idThread, uint msg, IntPtr wParam, IntPtr lParam);
+    public static extern bool PostThreadMessage(uint idThread, uint msg, nint wParam, nint lParam);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+    public static extern bool PostMessage(nint hWnd, uint msg, nint wParam, nint lParam);
 }
 
 public enum PclStatsLatencyMarkerType : uint

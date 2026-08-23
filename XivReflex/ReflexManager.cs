@@ -17,10 +17,9 @@ public class ReflexManager : IAsyncDisposable
     private Hook<PresentDelegate>? _presentHook;
     private Hook<MouseMessageHandlerDelegate>? _mouseMessageHandlerHook;
 
-    private unsafe delegate void PrePostTickDelegate(Device* thisPtr);
     private unsafe delegate void RunAllTasksDelegate(TaskManager* thisPtr, void* userData);
     private unsafe delegate void PresentDelegate(SwapChain* thisPtr);
-    private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, uint uMsg, uint wParam);
+    private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, uint uMsg, nint wParam);
 
     public NvAPI_Status InitStatus { get; }
 
@@ -94,31 +93,60 @@ public class ReflexManager : IAsyncDisposable
 
     private unsafe void RunAllTasksDetour(TaskManager* thisPtr, void* userData)
     {
-        if (_reflexEnabled)
+        var reflexEnabled = _reflexEnabled;
+        if (reflexEnabled)
+        {
             NvApiNative.D3D_Sleep(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer());
+            SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_START);
+        }
 
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_START);
         _runAllTasksHook!.OriginalDisposeSafe(thisPtr, userData);
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_END);
+
+        if (reflexEnabled)
+        {
+            SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_END);
+        }
     }
 
     private unsafe void ProcessCommandsDetour(ImmediateContext* thisPtr, RenderCommandBufferGroup* renderCommands, uint renderCommandCount)
     {
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_START);
+        var reflexEnabled = _reflexEnabled;
+        if (reflexEnabled)
+        {
+            SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_START);
+        }
+
         _processCommandsHook!.OriginalDisposeSafe(thisPtr, renderCommands, renderCommandCount);
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_END);
+
+        if (reflexEnabled)
+        {
+            SetLatencyMarker(NV_LATENCY_MARKER_TYPE.RENDERSUBMIT_END);
+        }
     }
 
     private unsafe void PresentDetour(SwapChain* thisPtr)
     {
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PRESENT_START);
+        var reflexEnabled = _reflexEnabled;
+        if (reflexEnabled)
+        {
+            SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PRESENT_START);
+        }
+
         _presentHook!.OriginalDisposeSafe(thisPtr);
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PRESENT_END);
+
+        if (reflexEnabled)
+        {
+            SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PRESENT_END);
+        }
     }
 
-    private unsafe void MouseMessageHandlerDetour(void* hwnd, uint uMsg, uint wParam)
+    private unsafe void MouseMessageHandlerDetour(void* hwnd, uint uMsg, nint wParam)
     {
         _mouseMessageHandlerHook!.OriginalDisposeSafe(hwnd, uMsg, wParam);
+
+        var reflexEnabled = _reflexEnabled;
+        if (!reflexEnabled)
+            return;
 
         if (uMsg == 0x201) // WM_LBUTTONDOWN
         {
@@ -131,7 +159,7 @@ public class ReflexManager : IAsyncDisposable
         }
     }
 
-    public void SetSleepMode(bool lowLatencyMode, bool lowLatencyBoost = false, bool useFpsLimit = false, float fpsLimit = 0f, bool useMarkersToOptimize = false)
+    public unsafe void SetSleepMode(bool lowLatencyMode, bool lowLatencyBoost = false, bool useFpsLimit = false, float fpsLimit = 0f, bool useMarkersToOptimize = false)
     {
         var minimumIntervalUs = useFpsLimit ? (uint)(1000.0f / fpsLimit * 1000.0f) : 0;
 
@@ -145,13 +173,7 @@ public class ReflexManager : IAsyncDisposable
         };
         sleepModeParams.Rsvd.Clear();
 
-        NvAPI_Status status;
-
-        unsafe
-        {
-            status = NvApiNative.D3D_SetSleepMode(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &sleepModeParams);
-        }
-
+        var status = NvApiNative.D3D_SetSleepMode(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &sleepModeParams);
         _reflexEnabled = status == NvAPI_Status.NVAPI_OK;
 
         if (status != _lastStatus)
