@@ -22,7 +22,7 @@ public class ReflexManager : IAsyncDisposable
     private unsafe delegate void PresentDelegate(SwapChain* thisPtr);
     private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, uint uMsg, uint wParam);
 
-    public NvAPI_Status InitStatus { get; private set; }
+    public NvAPI_Status InitStatus { get; }
 
     public ReflexManager()
     {

@@ -135,11 +135,6 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        if (isInitialized)
-        {
-            // TODO: FrameReport
-        }
-
         var contentAvail = ImGui.GetContentRegionAvail();
         var footerHeight = style.ItemSpacing.Y * 3 + ImGui.GetTextLineHeightWithSpacing();
         ImGui.Dummy(new Vector2(1, contentAvail.Y - footerHeight));
