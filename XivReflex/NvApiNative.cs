@@ -6,12 +6,15 @@ using InteropGenerator.Runtime.Attributes;
 
 namespace XivReflex;
 
-// [GenerateInterop]
-[StructLayout(LayoutKind.Explicit, Size = 0)]
-public unsafe struct NvApiNative
+public static unsafe class NvApiNative
 {
     // https://github.com/NVIDIA/nvapi/blob/cd6918f/nvapi_lite_common.h#L203
     public const int MAX_PHYSICAL_GPUS = 64;
+
+    private static delegate* unmanaged<void*, void*, NvAPI_Status> CachedSetLatencyMarker;
+    private static delegate* unmanaged<void*, NvAPI_Status> CachedSleep;
+    private static delegate* unmanaged<void*, NV_SET_SLEEP_MODE_PARAMS_V1*, NvAPI_Status> CachedSetSleepMode;
+    private static delegate* unmanaged<void**, uint*, NvAPI_Status> CachedEnumPhysicalGPUs;
 
     public static class Addresses
     {
@@ -39,50 +42,66 @@ public unsafe struct NvApiNative
         return MemberFunctionPointers.GetOrInitNvAPI(ptr);
     }
 
-    public static void* GetQueryInterfaceAddress()
-    {
-        if (Addresses.GetQueryInterfaceAddress == 0)
-            throw new InvalidOperationException("Address for GetQueryInterfaceAddress is null.");
-        return *(void**)Addresses.GetQueryInterfaceAddress;
-    }
-
     public static void* QueryInterface(NvAPI_InterfaceFunction funcId)
     {
-        var fn = (delegate* unmanaged<uint, void*>)GetQueryInterfaceAddress();
+        if (Addresses.GetQueryInterfaceAddress == 0)
+            return null;
+
+        var fn = *(delegate* unmanaged<uint, void*>*)Addresses.GetQueryInterfaceAddress;
         if (fn == null)
             return null;
+
         return fn((uint)funcId);
     }
 
     public static NvAPI_Status D3D_SetLatencyMarker(void* pDev, void* pGetLatencyParams)
     {
-        var fn = (delegate* unmanaged<void*, void*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.D3D_SetLatencyMarker);
+        var fn = CachedSetLatencyMarker;
+        if (fn == null)
+            fn = CachedSetLatencyMarker = (delegate* unmanaged<void*, void*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.D3D_SetLatencyMarker);
+
         if (fn == null)
             return NvAPI_Status.NVAPI_INVALID_POINTER;
+
         return fn(pDev, pGetLatencyParams);
     }
 
     public static NvAPI_Status D3D_Sleep(void* pDev)
     {
-        var fn = (delegate* unmanaged<void*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.D3D_Sleep);
+        var fn = CachedSleep;
+
+        if (fn == null)
+            fn = CachedSleep = (delegate* unmanaged<void*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.D3D_Sleep);
+
         if (fn == null)
             return NvAPI_Status.NVAPI_INVALID_POINTER;
+
         return fn(pDev);
     }
 
     public static NvAPI_Status D3D_SetSleepMode(void* pDev, NV_SET_SLEEP_MODE_PARAMS_V1* pSetSleepModeParams)
     {
-        var fn = (delegate* unmanaged<void*, NV_SET_SLEEP_MODE_PARAMS_V1*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.D3D_SetSleepMode);
+        var fn = CachedSetSleepMode;
+
+        if (fn == null)
+            fn = CachedSetSleepMode = (delegate* unmanaged<void*, NV_SET_SLEEP_MODE_PARAMS_V1*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.D3D_SetSleepMode);
+
         if (fn == null)
             return NvAPI_Status.NVAPI_INVALID_POINTER;
+
         return fn(pDev, pSetSleepModeParams);
     }
 
     public static NvAPI_Status EnumPhysicalGPUs(void** nvGPUHandle, uint* pGpuCount)
     {
-        var fn = (delegate* unmanaged<void**, uint*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.EnumPhysicalGPUs);
+        var fn = CachedEnumPhysicalGPUs;
+
+        if (fn == null)
+            fn = CachedEnumPhysicalGPUs = (delegate* unmanaged<void**, uint*, NvAPI_Status>)QueryInterface(NvAPI_InterfaceFunction.EnumPhysicalGPUs);
+
         if (fn == null)
             return NvAPI_Status.NVAPI_INVALID_POINTER;
+
         return fn(nvGPUHandle, pGpuCount);
     }
 
