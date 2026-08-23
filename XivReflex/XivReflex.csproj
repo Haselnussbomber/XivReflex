@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <!-- Project settings -->
+  <PropertyGroup>
+    <Name>XivReflex</Name>
+    <Version>1.0.0</Version>
+    <Author>Haselnussbomber</Author>
+    <RepoUrl>https://github.com/Haselnussbomber/XivReflex</RepoUrl>
+    <Punchline>TODO</Punchline>
+    <Description>TODO</Description>
+  </PropertyGroup>
+
+  <!-- Build settings -->
+  <PropertyGroup>
+    <OutputPath>..\bin\</OutputPath>
+  </PropertyGroup>
+
+  <!-- Assets -->
+  <ItemGroup>
+    <None Condition="'$(Configuration)' == 'Debug'" Include="Assets\Icon.png" Link="images\icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- NuGet dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
