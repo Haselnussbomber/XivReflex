@@ -20,6 +20,10 @@ public static class Localization
             { "en", "Support me on GitHub Sponsors" },
             { "de", "Unterstütze mich auf GitHub Sponsors" }
         },
+        ["ConfigWindow.ReleaseNotesLink.Tooltip"] = new() {
+            { "en", "Visit Release Notes" },
+            { "de", "Zu den Release Notes" }
+        },
         ["CommandHandlerHelpMessage"] = new() {
             { "en", "Opens the XivReflex configuration window" },
             { "de", "Öffnet das XivReflex-Konfigurationsfenster" },

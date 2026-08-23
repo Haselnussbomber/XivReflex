@@ -1,8 +1,6 @@
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -23,9 +21,7 @@ public class ConfigWindow : Window, IDisposable
         AllowPinning = false;
 
         Flags |= ImGuiWindowFlags.NoScrollbar;
-
-        Size = new Vector2(500, 500);
-        SizeCondition = ImGuiCond.Appearing;
+        Flags |= ImGuiWindowFlags.AlwaysAutoResize;
 
         WindowName = $"{t("ConfigWindow.WindowName")}##XivReflexConfig";
 
@@ -135,29 +131,19 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        var contentAvail = ImGui.GetContentRegionAvail();
-        var footerHeight = style.ItemSpacing.Y * 3 + ImGui.GetTextLineHeightWithSpacing();
-        ImGui.Dummy(new Vector2(1, contentAvail.Y - footerHeight));
-
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
-
-        var cursorPos = ImGui.GetCursorPos();
-
         DrawLink("GitHub", t("ConfigWindow.GitHubLink.Tooltip"), "https://github.com/Haselnussbomber/XivReflex");
         ImGui.SameLine();
         ImGui.Text("•");
         ImGui.SameLine();
         DrawLink("Sponsor", t("ConfigWindow.SponsorLink.Tooltip"), "https://github.com/sponsors/Haselnussbomber");
-
-        var version = Assembly.GetExecutingAssembly().GetName().Version;
-        if (version != null)
-        {
-            var versionString = "v" + version.ToString(3);
-            ImGui.SetCursorPos(new Vector2(cursorPos.X + contentAvail.X - ImGui.CalcTextSize(versionString).X, cursorPos.Y));
-            ImGui.TextDisabled(versionString);
-        }
+        ImGui.SameLine();
+        ImGui.Text("•");
+        ImGui.SameLine();
+        var versionString = "v" + Services.PluginInterface.Manifest.AssemblyVersion.ToString(3);
+        DrawLink(versionString, t("ConfigWindow.ReleaseNotesLink.Tooltip"), "https://github.com/Haselnussbomber/XivReflex/blob/main/CHANGELOG.md");
     }
 
     public static void DrawLink(string label, string title, string url)
