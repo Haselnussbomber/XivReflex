@@ -26,7 +26,7 @@ public class Plugin(IDalamudPluginInterface pluginInterface) : IAsyncDalamudPlug
         {
             HelpMessage = t("CommandHandlerHelpMessage"),
         };
-        Services.CommandManager.AddHandler("/reflex", _commandInfo);
+        Services.CommandManager.AddHandler("/xivreflex", _commandInfo);
 
         Services.PluginInterface.LanguageChanged += OnLanguageChanged;
 
@@ -45,7 +45,7 @@ public class Plugin(IDalamudPluginInterface pluginInterface) : IAsyncDalamudPlug
         _windowSystem?.Dispose();
         _windowSystem = null;
 
-        Services.CommandManager.RemoveHandler("/reflex");
+        Services.CommandManager.RemoveHandler("/xivreflex");
 
         Services.PluginInterface.LanguageChanged -= OnLanguageChanged;
 
