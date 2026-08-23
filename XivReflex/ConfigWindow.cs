@@ -138,7 +138,6 @@ public class ConfigWindow : Window, IDisposable
         if (isInitialized)
         {
             // TODO: FrameReport
-            ImGui.Text($"SleepDuration: {Services.ReflexManager.SleepDuration.TotalMilliseconds.ToString(CultureInfo.InvariantCulture)}ms");
         }
 
         var contentAvail = ImGui.GetContentRegionAvail();

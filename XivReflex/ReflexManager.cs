@@ -1,10 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.System.Input;
 
 namespace XivReflex;
 
@@ -18,16 +16,13 @@ public class ReflexManager : IAsyncDisposable
     private Hook<ImmediateContext.Delegates.ProcessCommands>? _processCommandsHook;
     private Hook<PresentDelegate>? _presentHook;
     private Hook<MouseMessageHandlerDelegate>? _mouseMessageHandlerHook;
-    private Hook<InputUpdateDelegate>? _inputUpdateHook;
 
     private unsafe delegate void PrePostTickDelegate(Device* thisPtr);
     private unsafe delegate void RunAllTasksDelegate(TaskManager* thisPtr, void* userData);
     private unsafe delegate void PresentDelegate(SwapChain* thisPtr);
     private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, uint uMsg, uint wParam);
-    private unsafe delegate void InputUpdateDelegate(InputDeviceManager* thisPtr, float frameDeltaTime, GamepadInputData* outGamepadInputs, CursorInputData* outCursorInputs, KeyboardInputData* outKeyboardInputs);
 
     public NvAPI_Status InitStatus { get; private set; }
-    public TimeSpan SleepDuration { get; private set; } = TimeSpan.Zero;
 
     public ReflexManager()
     {
@@ -64,7 +59,6 @@ public class ReflexManager : IAsyncDisposable
             _processCommandsHook = Services.GameInteropProvider.HookFromAddress<ImmediateContext.Delegates.ProcessCommands>(ImmediateContext.Addresses.ProcessCommands.Value, ProcessCommandsDetour);
             _mouseMessageHandlerHook = Services.GameInteropProvider.HookFromSignature<MouseMessageHandlerDelegate>("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 C6 05", MouseMessageHandlerDetour);
             _presentHook = Services.GameInteropProvider.HookFromSignature<PresentDelegate>("E8 ?? ?? ?? ?? C6 46 ?? 00 48 8B 8E", PresentDetour);
-            _inputUpdateHook = Services.GameInteropProvider.HookFromSignature<InputUpdateDelegate>("E8 ?? ?? ?? ?? 83 7B ?? 00 75 ?? 48 8B CF", InputUpdateDetour);
         }
 
         Services.Framework.Run(() =>
@@ -73,7 +67,6 @@ public class ReflexManager : IAsyncDisposable
             _processCommandsHook.Enable();
             _presentHook.Enable();
             _mouseMessageHandlerHook.Enable();
-            _inputUpdateHook.Enable();
 
             PCLStats.Init();
 
@@ -103,8 +96,6 @@ public class ReflexManager : IAsyncDisposable
             _presentHook = null;
             _mouseMessageHandlerHook?.Dispose();
             _mouseMessageHandlerHook = null;
-            _inputUpdateHook?.Dispose();
-            _inputUpdateHook = null;
             PCLStats.Shutdown();
         }));
     }
@@ -112,11 +103,7 @@ public class ReflexManager : IAsyncDisposable
     private unsafe void RunAllTasksDetour(TaskManager* thisPtr, void* userData)
     {
         if (_reflexEnabled)
-        {
-            var start = Stopwatch.GetTimestamp();
             NvApiNative.D3D_Sleep(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer());
-            SleepDuration = Stopwatch.GetElapsedTime(start);
-        }
 
         SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_START);
         _runAllTasksHook!.OriginalDisposeSafe(thisPtr, userData);
@@ -150,12 +137,6 @@ public class ReflexManager : IAsyncDisposable
         {
             SetLatencyMarker(NV_LATENCY_MARKER_TYPE.PC_LATENCY_PING);
         }
-    }
-
-    private unsafe void InputUpdateDetour(InputDeviceManager* thisPtr, float frameDeltaTime, GamepadInputData* outGamepadInputs, CursorInputData* outCursorInputs, KeyboardInputData* outKeyboardInputs)
-    {
-        SetLatencyMarker(NV_LATENCY_MARKER_TYPE.INPUT_SAMPLE);
-        _inputUpdateHook!.OriginalDisposeSafe(thisPtr, frameDeltaTime, outGamepadInputs, outCursorInputs, outKeyboardInputs);
     }
 
     public void SetSleepMode(bool lowLatencyMode, bool lowLatencyBoost = false, bool useFpsLimit = false, float fpsLimit = 0f, bool useMarkersToOptimize = false)

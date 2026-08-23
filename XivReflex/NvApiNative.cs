@@ -123,7 +123,7 @@ public enum NV_LATENCY_MARKER_TYPE
     RENDERSUBMIT_END = 3,
     PRESENT_START = 4,
     PRESENT_END = 5,
-    INPUT_SAMPLE = 6,
+    // INPUT_SAMPLE = 6, // (Deprecated)
     TRIGGER_FLASH = 7,
     PC_LATENCY_PING = 8,
 }
