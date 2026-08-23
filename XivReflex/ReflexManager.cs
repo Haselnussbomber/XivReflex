@@ -217,5 +217,4 @@ public class ReflexManager : IAsyncDisposable
         var ret = NvApiNative.D3D_SetLatencyMarker(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &markerParams);
         return ret == NvAPI_Status.NVAPI_OK;
     }
-
 }

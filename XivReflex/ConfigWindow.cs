@@ -51,9 +51,9 @@ public class ConfigWindow : Window, IDisposable
         var style = ImGui.GetStyle();
 
         var labels = new string[] {
-            "NVIDIA Reflex Low Latency",
-            "Frame Rate Limiter",
-            "Frame Rate Limit",
+            t("Config.NVIDIAReflexLowLatency.Label"),
+            t("Config.FrameRateLimiter.Label"),
+            t("Config.FrameRateLimit.Label"),
         };
 
         var labelColumnWidth = labels.Max(text => ImGui.CalcTextSize(text).X) + style.ItemSpacing.X * 2;
@@ -68,7 +68,7 @@ public class ConfigWindow : Window, IDisposable
         using (ImRaii.Disabled(!isInitialized))
         {
             // LowLatencyMode / LowLatencyBoost
-            ImGui.Text("NVIDIA Reflex Low Latency"u8);
+            ImGui.Text(t("Config.NVIDIAReflexLowLatency.Label"));
             ImGui.SameLine(labelColumnWidth);
             var lowLatency = config.LowLatencyMode switch
             {
@@ -77,7 +77,10 @@ public class ConfigWindow : Window, IDisposable
                 _ => 0
             };
             ImGui.SetNextItemWidth(100);
-            if (ImGui.Combo("##LowLatency"u8, ref lowLatency, ["Off", "On", "On + Boost"]))
+            if (ImGui.Combo("##LowLatency"u8, ref lowLatency, [
+                t("Config.NVIDIAReflexLowLatency.Option.Off"),
+                t("Config.NVIDIAReflexLowLatency.Option.On"),
+                t("Config.NVIDIAReflexLowLatency.Option.OnBoost")]))
             {
                 switch (lowLatency)
                 {
@@ -101,24 +104,10 @@ public class ConfigWindow : Window, IDisposable
                 }
             }
 
-            // TODO: update description. boost is NOT a slight increase in GPU power draw... this makes the thing run on full throttle
-            ImGuiComponents.HelpMarker("""
-Off:
-     Low Latency mode is disabled.
-     
-On:
-     Low Latency mode is now enabled and
-     optimizing system latency.
-     
-On + Boost:
-     Low Latency mode is now enabled and
-     optimizing system latency. In Boost mode,
-     NVIDIA Reflex will attempt to optimize latency
-     in CPU bound cases as well. This can slightly
-     increase GPU power draw.
-""");
+            ImGuiComponents.HelpMarker(t("Config.NVIDIAReflexLowLatency.HelpMessage"));
+
             // UseFPSLimit
-            ImGui.Text("Frame Rate Limiter"u8);
+            ImGui.Text(t("Config.FrameRateLimiter.Label"));
             ImGui.SameLine(labelColumnWidth);
             changed |= ImGui.Checkbox("##FrameRateLimiter"u8, ref config.UseFPSLimit);
 
@@ -126,7 +115,7 @@ On + Boost:
             using (ImRaii.Disabled(!config.UseFPSLimit))
             using (ImRaii.PushIndent())
             {
-                ImGui.Text("Frame Rate Limit"u8);
+                ImGui.Text(t("Config.FrameRateLimit.Label"));
                 ImGui.SameLine(labelColumnWidth);
                 ImGui.SetNextItemWidth(100);
                 changed |= ImGui.InputFloat("##FrameRateLimit"u8, ref config.FpsLimit);

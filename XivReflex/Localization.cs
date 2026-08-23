@@ -24,6 +24,57 @@ public static class Localization
             { "en", "Opens the XivReflex configuration window" },
             { "de", "Öffnet das XivReflex-Konfigurationsfenster" },
         },
+        ["Config.NVIDIAReflexLowLatency.Label"] = new() {
+            { "en", "NVIDIA Reflex Low Latency" }
+        },
+        ["Config.NVIDIAReflexLowLatency.Option.Off"] = new() {
+            { "en", "Off" }
+        },
+        ["Config.NVIDIAReflexLowLatency.Option.On"] = new() {
+            { "en", "On" }
+        },
+        ["Config.NVIDIAReflexLowLatency.Option.OnBoost"] = new() {
+            { "en", "On + Boost" }
+        },
+        ["Config.NVIDIAReflexLowLatency.HelpMessage"] = new() {
+            { "en", """
+Off:
+     Standard rendering pipeline. May provide slightly
+     higher peak FPS, but higher system latency.
+     
+On:
+     Optimizes system pipeline latency to align the CPU
+     and GPU, significantly reducing input lag.
+     Recommended for most players.
+     
+On + Boost:
+     Further reduces latency by overriding GPU power-
+     saving features to force maximum clock speeds.
+     Increases GPU power draw and heat.
+""" },
+            { "de", """
+Off:
+     Standard-Rendering-Pipeline. Kann leicht höhere
+     maximale FPS bieten, führt jedoch zu höherer Systemlatenz.
+
+On:
+     Optimiert die System-Pipeline-Latenz, um CPU und GPU
+     zu synchronisieren, was die Eingabeverzögerung deutlich
+     reduziert. Für die meisten Spieler empfohlen.
+
+On + Boost:
+     Reduziert die Latenz weiter, indem Energiesparfunktionen
+     der GPU außer Kraft gesetzt werden, um maximale Taktraten
+     zu erzwingen.
+     Erhöht Stromverbrauch und Wärmeentwicklung der GPU.
+""" }
+        },
+        ["Config.FrameRateLimiter.Label"] = new() {
+            { "en", "Frame Rate Limiter" }
+        },
+        ["Config.FrameRateLimit.Label"] = new() {
+            { "en", "Frame Rate Limit" }
+        }
     }.ToFrozenDictionary();
 
     public static string t(string key)
