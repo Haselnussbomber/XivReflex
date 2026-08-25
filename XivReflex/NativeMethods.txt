@@ -3,3 +3,9 @@ GetForegroundWindow
 GetWindowThreadProcessId
 PostThreadMessage
 PostMessage
+SendInput
+INPUT
+INPUT_TYPE
+KEYBDINPUT
+KEYEVENTF
+VIRTUAL_KEY
