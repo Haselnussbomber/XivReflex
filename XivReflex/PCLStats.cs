@@ -127,7 +127,6 @@ public static class PCLStats
         SendInput = sendInput;
     }
 
-    // The ping thread procedure logic translated to C#
     private static void PingThreadProc()
     {
         var rand = new Random();
