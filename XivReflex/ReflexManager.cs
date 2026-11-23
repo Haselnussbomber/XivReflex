@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 
 namespace XivReflex;
 
@@ -12,14 +13,10 @@ public class ReflexManager : IAsyncDisposable
     private ulong _framesDrawn;
     private NvAPI_Status _lastStatus = NvAPI_Status.NVAPI_INVALID_CONFIGURATION;
 
-    private Hook<RunAllTasksDelegate>? _runAllTasksHook;
+    private Hook<TaskManager.Delegates.ExecuteAllTasks>? _runAllTasksHook;
     private Hook<ImmediateContext.Delegates.ProcessCommands>? _processCommandsHook;
-    private Hook<PresentDelegate>? _presentHook;
-    private Hook<MouseMessageHandlerDelegate>? _mouseMessageHandlerHook;
-
-    private unsafe delegate void RunAllTasksDelegate(TaskManager* thisPtr, void* userData);
-    private unsafe delegate void PresentDelegate(SwapChain* thisPtr);
-    private unsafe delegate void MouseMessageHandlerDelegate(void* hwnd, uint uMsg, nint wParam);
+    private Hook<SwapChain.Delegates.Present>? _presentHook;
+    private Hook<MouseDevice.Delegates.ProcessMouseInputMessage>? _mouseMessageHandlerHook;
 
     public NvAPI_Status InitStatus { get; }
 
@@ -47,10 +44,21 @@ public class ReflexManager : IAsyncDisposable
 
         Services.PluginLog.Information("NVIDIA GPU found, using NVAPI");
 
-        _runAllTasksHook = Services.GameInteropProvider.HookFromSignature<RunAllTasksDelegate>("E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ?? 48 85 C9 74 ?? F3 0F 10 8B", RunAllTasksDetour);
-        _processCommandsHook = Services.GameInteropProvider.HookFromAddress<ImmediateContext.Delegates.ProcessCommands>(ImmediateContext.Addresses.ProcessCommands.Value, ProcessCommandsDetour);
-        _mouseMessageHandlerHook = Services.GameInteropProvider.HookFromSignature<MouseMessageHandlerDelegate>("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 C6 05", MouseMessageHandlerDetour);
-        _presentHook = Services.GameInteropProvider.HookFromSignature<PresentDelegate>("E8 ?? ?? ?? ?? C6 46 ?? 00 48 8B 8E", PresentDetour);
+        _runAllTasksHook = Services.GameInteropProvider.HookFromAddress<TaskManager.Delegates.ExecuteAllTasks>(
+            TaskManager.Addresses.ExecuteAllTasks.Value,
+            RunAllTasksDetour);
+
+        _processCommandsHook = Services.GameInteropProvider.HookFromAddress<ImmediateContext.Delegates.ProcessCommands>(
+            ImmediateContext.Addresses.ProcessCommands.Value,
+            ProcessCommandsDetour);
+
+        _presentHook = Services.GameInteropProvider.HookFromAddress<SwapChain.Delegates.Present>(
+            SwapChain.Addresses.Present.Value,
+            PresentDetour);
+
+        _mouseMessageHandlerHook = Services.GameInteropProvider.HookFromAddress<MouseDevice.Delegates.ProcessMouseInputMessage>(
+            MouseDevice.Addresses.ProcessMouseInputMessage.Value,
+            MouseMessageHandlerDetour);
 
         Services.Framework.Run(() =>
         {
@@ -79,19 +87,20 @@ public class ReflexManager : IAsyncDisposable
         {
             SetSleepMode(false);
 
-            _runAllTasksHook?.Dispose();
-            _runAllTasksHook = null;
-            _processCommandsHook?.Dispose();
-            _processCommandsHook = null;
-            _presentHook?.Dispose();
-            _presentHook = null;
             _mouseMessageHandlerHook?.Dispose();
             _mouseMessageHandlerHook = null;
+            _presentHook?.Dispose();
+            _presentHook = null;
+            _processCommandsHook?.Dispose();
+            _processCommandsHook = null;
+            _runAllTasksHook?.Dispose();
+            _runAllTasksHook = null;
+
             PCLStats.Shutdown();
         }));
     }
 
-    private unsafe void RunAllTasksDetour(TaskManager* thisPtr, void* userData)
+    private unsafe void RunAllTasksDetour(TaskManager* thisPtr, float* dt)
     {
         var reflexEnabled = _reflexEnabled;
         if (reflexEnabled)
@@ -100,7 +109,7 @@ public class ReflexManager : IAsyncDisposable
             SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_START);
         }
 
-        _runAllTasksHook!.OriginalDisposeSafe(thisPtr, userData);
+        _runAllTasksHook!.OriginalDisposeSafe(thisPtr, dt);
 
         if (reflexEnabled)
         {
@@ -140,7 +149,7 @@ public class ReflexManager : IAsyncDisposable
         }
     }
 
-    private unsafe void MouseMessageHandlerDetour(void* hwnd, uint uMsg, nint wParam)
+    private void MouseMessageHandlerDetour(nint hwnd, uint uMsg, nint wParam)
     {
         _mouseMessageHandlerHook!.OriginalDisposeSafe(hwnd, uMsg, wParam);
 
