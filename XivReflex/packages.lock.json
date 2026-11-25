@@ -49,6 +49,7 @@
           "Microsoft.Windows.SDK.Win32Metadata": "63.0.31-preview"
         }
       }
-    }
+    },
+    "net10.0-windows7.0/win-x64": {}
   }
 }

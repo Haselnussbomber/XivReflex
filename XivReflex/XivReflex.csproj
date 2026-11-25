@@ -13,6 +13,9 @@ Requirements:
 
 - NVIDIA GeForce 900 Series or newer
 - NVIDIA Driver version 456.38 or newer</Description>
+    <CanUnloadAsync>true</CanUnloadAsync>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
   <!-- Build settings -->
