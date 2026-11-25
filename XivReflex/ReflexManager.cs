@@ -90,6 +90,8 @@ public class ReflexManager : IAsyncDisposable
             _runAllTasksHook?.Dispose();
             _runAllTasksHook = null;
 
+            Services.PluginLog.Information("Hooks disposed");
+
             PCLStats.Shutdown();
 
             IsInitialized = false;
