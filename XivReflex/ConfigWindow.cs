@@ -55,7 +55,7 @@ public class ConfigWindow : Window, IDisposable
 
         var labelColumnWidth = labels.Max(text => ImGui.CalcTextSize(text).X) + style.ItemSpacing.X * 2;
         var changed = false;
-        var isInitialized = Services.ReflexManager.InitStatus == NvAPI_Status.NVAPI_OK;
+        var isInitialized = Services.ReflexManager.IsInitialized;
 
         if (!isInitialized)
         {

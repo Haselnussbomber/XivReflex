@@ -29,55 +29,55 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using InteropGenerator.Runtime.Attributes;
+using Windows.Win32;
+using Windows.Win32.Foundation;
 
 namespace XivReflex;
 
-public static unsafe class NvApiNative
+public static unsafe class NvAPINative
 {
     // https://github.com/NVIDIA/nvapi/blob/cd6918f/nvapi_lite_common.h#L203
     public const int MAX_PHYSICAL_GPUS = 64;
 
+    private static delegate* unmanaged<NvAPI_InterfaceFunction, void*> QueryInterface;
     private static delegate* unmanaged<void*, void*, NvAPI_Status> CachedSetLatencyMarker;
     private static delegate* unmanaged<void*, NvAPI_Status> CachedSleep;
     private static delegate* unmanaged<void*, NV_SET_SLEEP_MODE_PARAMS_V1*, NvAPI_Status> CachedSetSleepMode;
     private static delegate* unmanaged<void**, uint*, NvAPI_Status> CachedEnumPhysicalGPUs;
 
-    public static class Addresses
+    public static bool Initialize()
     {
-        public static nint GetOrInitNvAPI;
-        public static nint GetQueryInterfaceAddress;
-    }
+        // TODO: replace with NvAPI.GetOrLoadModule from CS
+        if (!Services.SigScanner.TryScanText("E8 ?? ?? ?? ?? 89 44 24 ?? 83 7C 24 ?? ?? 75 ??", out var getOrLoadModuleAddr))
+        {
+            Services.PluginLog.Error("NvAPI.GetOrLoadModule not found.");
+            return false;
+        }
 
-    public static class MemberFunctionPointers
-    {
-        public static delegate* unmanaged<void**, NvAPI_Status> GetOrInitNvAPI => (delegate* unmanaged<void**, NvAPI_Status>)Addresses.GetOrInitNvAPI;
-    }
+        Services.PluginLog.Debug($"NvAPI.GetOrLoadModule found at {getOrLoadModuleAddr:X}");
 
-    public static void Initialize()
-    {
-        Addresses.GetOrInitNvAPI = Services.SigScanner.ScanText("E8 ?? ?? ?? ?? 89 44 24 ?? 83 7C 24 ?? ?? 75 ??");
-        Services.PluginLog.Debug($"GetOrInitNvAPI: {Addresses.GetOrInitNvAPI:X}");
-        Addresses.GetQueryInterfaceAddress = Services.SigScanner.GetStaticAddressFromSig("FF 15 ?? ?? ?? ?? 48 89 05 ?? ?? ?? ?? B9 ?? ??");
-        Services.PluginLog.Debug($"GetQueryInterfaceAddress: {Addresses.GetQueryInterfaceAddress:X}");
-    }
+        var getOrLoadModule = (delegate* unmanaged<void**, NvAPI_Status>)getOrLoadModuleAddr;
 
-    public static NvAPI_Status GetOrInitNvAPI(void** ptr)
-    {
-        if (MemberFunctionPointers.GetOrInitNvAPI is null)
-            throw new InvalidOperationException("Address for GetOrInitNvAPI is null.");
-        return MemberFunctionPointers.GetOrInitNvAPI(ptr);
-    }
+        void* module = null;
+        var status = getOrLoadModule(&module);
+        if (status != NvAPI_Status.NVAPI_OK)
+        {
+            Services.PluginLog.Error("NvAPI not initialized. Status code: {status}", status);
+            return false;
+        }
 
-    public static void* QueryInterface(NvAPI_InterfaceFunction funcId)
-    {
-        if (Addresses.GetQueryInterfaceAddress == 0)
-            return null;
+        var queryInterfaceProc = PInvoke.GetProcAddress((HMODULE)module, "nvapi_QueryInterface");
+        if (queryInterfaceProc.IsNull)
+        {
+            Services.PluginLog.Error("nvapi_QueryInterface not found.");
+            return false;
+        }
 
-        var fn = *(delegate* unmanaged<uint, void*>*)Addresses.GetQueryInterfaceAddress;
-        if (fn == null)
-            return null;
+        Services.PluginLog.Debug($"nvapi_QueryInterface found at {queryInterfaceProc.Value:X}");
 
-        return fn((uint)funcId);
+        QueryInterface = (delegate* unmanaged<NvAPI_InterfaceFunction, void*>)queryInterfaceProc.Value;
+
+        return true;
     }
 
     public static NvAPI_Status D3D_SetLatencyMarker(void* pDev, void* pGetLatencyParams)
@@ -179,7 +179,7 @@ public struct NV_LATENCY_MARKER_PARAMS_V1
 {
     public const int StructSize = 0x58;
 
-    public static uint StructVersion => NvApiNative.MakeVersion(StructSize, 1);
+    public static uint StructVersion => NvAPINative.MakeVersion(StructSize, 1);
 
     [UnscopedRef] public Span<byte> Rsvd => _rsvd;
 
@@ -195,7 +195,7 @@ public struct NV_SET_SLEEP_MODE_PARAMS_V1
 {
     public const int StructSize = 0x2C;
 
-    public static uint StructVersion => NvApiNative.MakeVersion(StructSize, 1);
+    public static uint StructVersion => NvAPINative.MakeVersion(StructSize, 1);
 
     [UnscopedRef] public Span<byte> Rsvd => _rsvd;
 

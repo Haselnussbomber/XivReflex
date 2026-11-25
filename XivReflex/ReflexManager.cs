@@ -18,27 +18,19 @@ public class ReflexManager : IAsyncDisposable
     private Hook<SwapChain.Delegates.Present>? _presentHook;
     private Hook<MouseDevice.Delegates.ProcessMouseInputMessage>? _mouseMessageHandlerHook;
 
-    public NvAPI_Status InitStatus { get; }
+    public bool IsInitialized { get; private set; }
 
     public unsafe ReflexManager()
     {
-        NvApiNative.Initialize();
-
-        void* nvapiLibrary = null;
-        InitStatus = NvApiNative.GetOrInitNvAPI(&nvapiLibrary);
-
-        if (InitStatus != NvAPI_Status.NVAPI_OK)
-        {
-            Services.PluginLog.Error("NVAPI not initialized. Status code: {status}", InitStatus);
+        if (!NvAPINative.Initialize())
             return;
-        }
 
         uint gpuCount = 0;
-        var nvGPUHandles = stackalloc void*[NvApiNative.MAX_PHYSICAL_GPUS];
-        NvApiNative.EnumPhysicalGPUs(nvGPUHandles, &gpuCount);
+        var nvGPUHandles = stackalloc void*[NvAPINative.MAX_PHYSICAL_GPUS];
+        NvAPINative.EnumPhysicalGPUs(nvGPUHandles, &gpuCount);
         if (gpuCount == 0)
         {
-            Services.PluginLog.Error("Did not find any NVIDIA GPU");
+            Services.PluginLog.Error("Did not find any NVIDIA GPU.");
             return;
         }
 
@@ -62,14 +54,14 @@ public class ReflexManager : IAsyncDisposable
 
         Services.Framework.Run(() =>
         {
+            PCLStats.Init();
+
             _runAllTasksHook.Enable();
             _processCommandsHook.Enable();
             _presentHook.Enable();
             _mouseMessageHandlerHook.Enable();
 
             Services.PluginLog.Information("Hooks enabled");
-
-            PCLStats.Init();
 
             var config = Services.Config;
             SetSleepMode(
@@ -78,6 +70,8 @@ public class ReflexManager : IAsyncDisposable
                 config.UseFPSLimit,
                 config.FpsLimit,
                 config.UseMarkersToOptimize);
+
+            IsInitialized = true;
         });
     }
 
@@ -97,6 +91,8 @@ public class ReflexManager : IAsyncDisposable
             _runAllTasksHook = null;
 
             PCLStats.Shutdown();
+
+            IsInitialized = false;
         }));
     }
 
@@ -105,7 +101,7 @@ public class ReflexManager : IAsyncDisposable
         var reflexEnabled = _reflexEnabled;
         if (reflexEnabled)
         {
-            NvApiNative.D3D_Sleep(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer());
+            NvAPINative.D3D_Sleep(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer());
             SetLatencyMarker(NV_LATENCY_MARKER_TYPE.SIMULATION_START);
         }
 
@@ -182,7 +178,7 @@ public class ReflexManager : IAsyncDisposable
         };
         sleepModeParams.Rsvd.Clear();
 
-        var status = NvApiNative.D3D_SetSleepMode(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &sleepModeParams);
+        var status = NvAPINative.D3D_SetSleepMode(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &sleepModeParams);
         _reflexEnabled = status == NvAPI_Status.NVAPI_OK;
 
         if (status != _lastStatus)
@@ -204,7 +200,7 @@ public class ReflexManager : IAsyncDisposable
     {
         PCLStats.Marker((PclStatsLatencyMarkerType)marker, _framesDrawn);
 
-        if (InitStatus != NvAPI_Status.NVAPI_OK)
+        if (!IsInitialized)
             return false;
 
         if (marker == NV_LATENCY_MARKER_TYPE.PRESENT_END)
@@ -218,7 +214,7 @@ public class ReflexManager : IAsyncDisposable
         };
         markerParams.Rsvd.Clear();
 
-        var ret = NvApiNative.D3D_SetLatencyMarker(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &markerParams);
+        var ret = NvAPINative.D3D_SetLatencyMarker(Services.PluginInterface.UiBuilder.DeviceHandle.ToPointer(), &markerParams);
         return ret == NvAPI_Status.NVAPI_OK;
     }
 }
