@@ -23,6 +23,7 @@ Requirements:
   <!-- Assets -->
   <ItemGroup>
     <None Condition="'$(Configuration)' == 'Debug'" Include="Assets\Icon.png" Link="images\icon.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="LICENSES.md" Link="LICENSES.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- NuGet dependencies -->
